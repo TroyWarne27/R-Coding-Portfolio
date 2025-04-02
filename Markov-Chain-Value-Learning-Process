@@ -1,0 +1,248 @@
+### Project Simulation
+
+
+###Weighting Function
+## -1/2 - x + e^(1/2x)
+## Weighting of 1/2 at zero distance, weighting at x3 at distance of 4
+Weight1 <- function(d){
+  
+  wt = -(1/2) - d + exp((1/2)*d)
+
+  return(wt)
+}
+
+curve(Weight1, from = 0,to=4,xlab = "Weight", ylab = "Distance")
+
+###Prospect Utility Function
+U1 <- function(g){
+  if (g >= 0){
+
+  u = sqrt(g)
+        
+  }
+  
+  else {
+    
+    u = -2.25*sqrt(-g)
+  }
+  
+  return(u)
+}
+
+###Create Initial Vectors
+PUD <- 0
+PD <- 0
+X <- 0
+Y <- 0
+W <- 0
+D <- 0
+PX <- 0
+PY <- 0
+T <- 1
+V <- 0
+PU <- 0
+G <- 0 
+U <- 0 
+
+VPA <- function(t_max){
+
+  
+    for (i in 2:t_max){
+    ### Time Vector
+    T[i] <- i
+    
+    ###Generate Memory Location  
+    ## SD of 1 => Most of Density of values between -2,2, distances highly likely to be less than 4
+    X[i] <- rnorm(1,0,1)
+    Y[i] <- rnorm(1,0,1)
+    
+    ###Calculate Distance from Previous Prototype
+    D[i] <- sqrt((X[i]-PX[i-1])^2+(Y[i]-PY[i-1])^2)
+    ### Calculate Weight based on Weighting Function
+    W[i] <- Weight1(d=D[i])
+    
+    ### Calculate Prototype Position
+    PX[i] <- weighted.mean(X[1:i],W[1:i])
+    PY[i] <- weighted.mean(Y[1:i],W[1:i])
+    
+    ### Calculate Distance Between Prototypes
+    PD[i] <- sqrt((PX[i]-PX[i-1])^2+(PY[i]-PY[i-1])^2)
+    
+    ###Generate Dollar Value of consumption in time i
+    V[i] <- rnorm(1,2.5,4)
+    
+    ###Calculate Gain/Loss
+    G[i] <- V[i] - PU[i-1]
+    
+    ###Utility for Gain/Loss
+    U[i] <- U1(g=G[i])
+    
+    ###Adjust Protoype Utility for New Experience
+    PU[i] <- weighted.mean(U[1:i],W[1:i])
+
+
+    }
+  
+  return(PU[t_max])
+  
+}
+
+
+### 1000 simulation for different t_max
+SR <- NULL    
+sim_max = 1000
+for(j in 1:sim_max){
+
+  SR[j] <- VPA(t_max = 30)  
+  
+}    
+
+hist(SR, main = "Prototype Utility after 30 Time Periods", xlab = "Final Prototype Utility", ylab = "Frequency Across 1000 Simulations", col = "dodgerblue" )
+vary <- var(SR)
+std <- sqrt(vary)
+std
+
+SR <- NULL    
+sim_max = 1000
+for(j in 1:sim_max){
+  
+  SR[j] <- VPA(t_max = 15)  
+  
+}    
+
+hist(SR, main = "Prototype Utility after 30 Time Periods", xlab = "Final Prototype Utility", ylab = "Frequency Across 1000 Simulations", col = "dodgerblue" )
+vary <- var(SR)
+std <- sqrt(vary)
+std
+    
+SR <- NULL    
+sim_max = 1000
+for(j in 1:sim_max){
+  
+  SR[j] <- VPA(t_max = 10)  
+  
+}    
+
+hist(SR, main = "Prototype Utility after 30 Time Periods", xlab = "Final Prototype Utility", ylab = "Frequency Across 1000 Simulations", col = "dodgerblue" )
+vary <- var(SR)
+std <- sqrt(vary)
+std
+
+### Simulation for Graphs
+t_max = 1000
+for (i in 2:t_max){
+  ### Time Vector
+  T[i] <- i
+  
+  ###Generate Memory Location  
+  ## SD of 1 => Most of Density of values between -2,2, distances highly likely to be less than 4
+  X[i] <- rnorm(1,0,1)
+  Y[i] <- rnorm(1,0,1)
+  
+  ###Calculate Distance from Previous Prototype
+  D[i] <- sqrt((X[i]-PX[i-1])^2+(Y[i]-PY[i-1])^2)
+  ### Calculate Weight based on Weighting Function
+  W[i] <- Weight1(d=D[i])
+  
+  ### Calculate Prototype Position
+  PX[i] <- weighted.mean(X[1:i],W[1:i])
+  PY[i] <- weighted.mean(Y[1:i],W[1:i])
+  
+  ### Calculate Distance Between Prototypes
+  PD[i] <- sqrt((PX[i]-PX[i-1])^2+(PY[i]-PY[i-1])^2)
+  
+  ###Generate Dollar Value of consumption in time i
+  V[i] <- rnorm(1,2.5,4)
+  
+  ###Calculate Gain/Loss
+  G[i] <- V[i] - PU[i-1]
+  
+  ###Utility for Gain/Loss
+  U[i] <- U1(g=G[i])
+  
+  ###Adjust Protoype Utility for New Experience
+  PU[i] <- weighted.mean(U[1:i],W[1:i])
+  
+  ###Calculate Prototype Value Change
+  PUD[i] <- abs(PU[i]-PU[i-1])
+    
+}
+
+mu <- mean(U)
+UT <- as.numeric(U)
+
+hist(UT, freq= FALSE,main = "Distribution of Utility in 1000 Time Steps", xlab = "Utility from Single Gain/Loss", xlim = c(-10,10), col="red" )
+curve(dnorm(x,2.5,4), add= TRUE)
+lines(mu, col = "purple", lty=2, lwd =2)
+lines(density(UT),col="blue", lty=2, lwd =2)
+
+
+hist(D, main = "Distribution of Distances in 1000 Time Steps", xlab = "Distance from Prototype", xlim = c(0,5), col="darkseagreen" )
+
+plot(T, U, xlab = "Simulation Time Step", ylab = "Utility from Gain/Loss", col="darkseagreen", pch=16)
+
+op <- par(cex = 1)
+plot(T[1:100], PD[1:100], xlab = "Simulation Time Step", ylab = "Distance from Previous Prototype", pch=19, col= "red" )
+points(T[1:100], PUD[1:100], pch =19, col="blue")
+legend("topright", c("Concept Prototype","Utility Prototype"), pch=c(19,19), col=c("red", "blue"), cex = .35)
+
+
+plot(PUD[1:100], PD[1:100])
+###Sim for Prototype Distances
+PDA <- function(t_max){
+  
+  
+  for (i in 2:t_max){
+    ### Time Vector
+    T[i] <- i
+    
+    ###Generate Memory Location  
+    ## SD of 1 => Most of Density of values between -2,2, distances highly likely to be less than 4
+    X[i] <- rnorm(1,0,1)
+    Y[i] <- rnorm(1,0,1)
+    
+    ###Calculate Distance from Previous Prototype
+    D[i] <- sqrt((X[i]-PX[i-1])^2+(Y[i]-PY[i-1])^2)
+    ### Calculate Weight based on Weighting Function
+    W[i] <- Weight1(d=D[i])
+    
+    ### Calculate Prototype Position
+    PX[i] <- weighted.mean(X[1:i],W[1:i])
+    PY[i] <- weighted.mean(Y[1:i],W[1:i])
+    
+    ### Calculate Distance Between Prototypes
+    PD[i] <- sqrt((PX[i]-PX[i-1])^2+(PY[i]-PY[i-1])^2)
+    
+    ###Generate Dollar Value of consumption in time i
+    V[i] <- rnorm(1,2.5,4)
+    
+    ###Calculate Gain/Loss
+    G[i] <- V[i] - PU[i-1]
+    
+    ###Utility for Gain/Loss
+    U[i] <- U1(g=G[i])
+    
+    ###Adjust Protoype Utility for New Experience
+    PU[i] <- weighted.mean(U[1:i],W[1:i])
+    
+    
+  }
+  
+  return(PD)
+  
+}
+
+sim1 <- PDA(t_max = 100)
+
+sim2 <- PDA(t_max = 100)
+
+sim3 <- PDA(t_max = 100)
+
+plot(T[1:100],sim1[1:100],pch=19, main = "Sample Path Distances from Previous Prototype", xlab = "Simulation Time Step", ylab = "Distance from Previous Prototype", col="red")
+points(T[1:100],sim2[1:100],pch=19, col="dodgerblue")
+points(T[1:100],sim3[1:100], pch = 19, col="green")
+legend("topright", c("Sim 1","Sim 2", "Sim 3"), pch=c(19,19,19), col=c("red", "blue", "green"), cex = .5)
+
+plot(PX,PY, text(PX,PY,labels=T, pos = 3))
+
+plot(T, PU)
